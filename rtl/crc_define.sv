@@ -13,25 +13,46 @@
 
 /* register mapping
  * CRC_CTRL:
- * BITS:   | 31:2 | 1  | 0    |
- * FIELDS: | RES  | EN | OVIE |
- * PERMS:  | NONE | RW | RW   |
- * ----------------------------
+ * BITS:   | 31:5 | 4      | 3     | 2   | 1    | 0  |
+ * FIELDS: | RES  | REVOUT | REVIN | CLR | DONE | EN |
+ * PERMS:  | NONE | RW     | RW    | RW  | RW   | RW |
+ * ----------------------------------------------------
+ * CRC_INIT:
+ * BITS:   | 31:0 |
+ * FIELDS: | INIT |
+ * PERMS:  | RW   |
+ * -------------------------------------------------- -
+ * CRC_XORV:
+ * BITS:   | 31:0 |
+ * FIELDS: | XORV |
+ * PERMS:  | RW   |
+ * ----------------------------------------------------
  * CRC_DATA:
  * BITS:   | 31:0 |
  * FIELDS: | DATA |
  * PERMS:  | RW   |
- * ----------------------------
+ * ---------------------------------------------------
+ * CRC_STAT: interrupt info
+ * BITS:   | 31:0 |
+ * FIELDS: | DATA |
+ * PERMS:  | RW   |
+ * ---------------------------------------------------
 */
 
 // verilog_format: off
 `define CRC_CTRL 4'b0000 // BASEADDR + 0x00
-`define CRC_DATA 4'b0001 // BASEADDR + 0x04
+`define CRC_INIT 4'b0001 // BASEADDR + 0x04
+`define CRC_XORV 4'b0010 // BASEADDR + 0x08
+`define CRC_DATA 4'b0011 // BASEADDR + 0x0C
 
 `define CRC_CTRL_ADDR {26'b0, `CRC_CTRL, 2'b00}
+`define CRC_INIT_ADDR {26'b0, `CRC_INIT, 2'b00}
+`define CRC_XORV_ADDR {26'b0, `CRC_XORV, 2'b00}
 `define CRC_DATA_ADDR {26'b0, `CRC_DATA, 2'b00}
 
-`define CRC_CTRL_WIDTH 1
+`define CRC_CTRL_WIDTH 5
+`define CRC_INIT_WIDTH 32
+`define CRC_XORV_WIDTH 32
 `define CRC_DATA_WIDTH 32
 // verilog_format: on
 
