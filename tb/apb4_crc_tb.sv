@@ -37,7 +37,6 @@ module apb4_crc_tb ();
       rst_n_i
   );
 
-
   test_top u_test_top (u_apb4_if.master);
   apb4_crc u_apb4_crc (u_apb4_if.slave);
 
