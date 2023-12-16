@@ -15,6 +15,9 @@ SIM_OPTIONS  := -full64 -debug_acc+all  +v2k -sverilog -timescale=1ns/10ps \
 
 SRC_FILE ?=
 SRC_FILE += ../rtl/apb4_crc.sv
+SRC_FILE += ../rtl/crc8_model.sv
+SRC_FILE += ../rtl/crc16_model.sv
+SRC_FILE += ../rtl/crc32_model.sv
 SRC_FILE += ../tb/crc_test.sv
 SRC_FILE += ../tb/test_top.sv
 SRC_FILE += ../tb/apb4_crc_tb.sv
