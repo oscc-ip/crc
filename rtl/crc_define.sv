@@ -52,11 +52,17 @@
 `define CRC_DATA_ADDR {26'b0, `CRC_DATA, 2'b00}
 `define CRC_STAT_ADDR {26'b0, `CRC_STAT, 2'b00}
 
-`define CRC_CTRL_WIDTH 4
+`define CRC_CTRL_WIDTH 6
 `define CRC_INIT_WIDTH 32
 `define CRC_XORV_WIDTH 32
 `define CRC_DATA_WIDTH 32
 `define CRC_STAT_WIDTH 1
+
+`define CRC8_MODE 2'b00
+`define CRC16_1021_MODE 2'b01
+`define CRC16_8005_MODE 2'b10
+`define CRC32_MODE 2'b11
+
 // verilog_format: on
 
 `endif

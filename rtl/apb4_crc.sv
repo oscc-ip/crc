@@ -9,7 +9,6 @@
 // See the Mulan PSL v2 for more details.
 
 `include "register.sv"
-`include "edge_det.sv"
 `include "crc_define.sv"
 
 // four apb clock
@@ -33,12 +32,17 @@ module apb4_crc (
   logic [`CRC_DATA_WIDTH-1:0] s_crc_data_d, s_crc_data_q;
   logic [`CRC_STAT_WIDTH-1:0] s_crc_stat_d, s_crc_stat_q;
   logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_crc_wr_val;
+
+  logic [7:0] s_crc8_wr, s_crc8_wr_rev;
+  logic [7:0] s_crc8_d, s_crc8_q, s_crc8_qq, s_crc8_q_rev;
+  logic [1:0] s_crc8_data;
   logic [15:0] s_crc16_wr, s_crc16_wr_rev;
   logic [15:0] s_crc16_d, s_crc16_q, s_crc16_qq, s_crc16_q_rev;
   logic [3:0] s_crc16_data;
+
+  logic s_bit_revout, s_bit_revin, s_bit_clr, s_bit_en, s_bit_done;
+  logic [1:0] s_bit_crc_mode;
   fsm_t fsm_state_d, fsm_state_q;
-  logic s_bit_revout, s_bit_revin, s_bit_clr, s_bit_en;
-  logic s_bit_done;
 
   assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
@@ -50,8 +54,14 @@ module apb4_crc (
   assign s_bit_clr       = s_crc_ctrl_q[1];
   assign s_bit_en        = s_crc_ctrl_q[0];
   assign s_bit_done      = s_crc_stat_q[0];
-
+  assign s_bit_crc_mode  = s_crc_ctrl_q[5:4];
+  assign s_crc8_wr       = apb4.pwdata[7:0];
   assign s_crc16_wr      = apb4.pwdata[15:0];
+
+  for (genvar i = 0; i < 8; i++) begin
+    assign s_crc8_wr_rev[i] = s_crc8_wr[7-i];
+  end
+
   for (genvar i = 0; i < 16; i++) begin
     if (i < 8) begin
       assign s_crc16_wr_rev[i] = s_crc16_wr[7-i];
@@ -59,6 +69,8 @@ module apb4_crc (
       assign s_crc16_wr_rev[i] = s_crc16_wr[15-(i-8)];
     end
   end
+
+
   assign s_crc_ctrl_d = (s_apb4_wr_hdshk && s_apb4_addr == `CRC_CTRL) ? apb4.pwdata[`CRC_CTRL_WIDTH-1:0] : s_crc_ctrl_q;
   dffr #(`CRC_CTRL_WIDTH) u_crc_ctrl_dffr (
       apb4.pclk,
@@ -87,15 +99,35 @@ module apb4_crc (
     s_crc_data_d = s_crc_data_q;
     if (s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) begin
       if (s_bit_revin) begin
-        s_crc_data_d = s_crc16_wr_rev;
+        unique case (s_bit_crc_mode)
+          `CRC8_MODE:       s_crc_data_d = s_crc8_wr_rev;
+          `CRC16_1021_MODE: s_crc_data_d = s_crc16_wr_rev;
+          `CRC16_8005_MODE: s_crc_data_d = s_crc16_wr_rev;
+          default:          s_crc_data_d = s_crc8_wr_rev;
+        endcase
       end else begin
-        s_crc_data_d = s_crc16_wr;  // TODO: max support 32 bit
+        unique case (s_bit_crc_mode)
+          `CRC8_MODE:       s_crc_data_d = s_crc8_wr;
+          `CRC16_1021_MODE: s_crc_data_d = s_crc16_wr;
+          `CRC16_8005_MODE: s_crc_data_d = s_crc16_wr;
+          default:          s_crc_data_d = s_crc8_wr_rev;
+        endcase
       end
     end else if (fsm_state_q == DONE) begin
       if (s_bit_revout) begin
-        s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q;
+        unique case (s_bit_crc_mode)
+          `CRC8_MODE:       s_crc_data_d = s_crc8_q_rev ^ s_crc_xorv_q[7:0];
+          `CRC16_1021_MODE: s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
+          `CRC16_8005_MODE: s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
+          default:          s_crc_data_d = s_crc8_q_rev ^ s_crc_xorv_q[7:0];
+        endcase
       end else begin
-        s_crc_data_d = s_crc16_q ^ s_crc_xorv_q;
+        unique case (s_bit_crc_mode)
+          `CRC8_MODE:       s_crc_data_d = s_crc8_q ^ s_crc_xorv_q[7:0];
+          `CRC16_1021_MODE: s_crc_data_d = s_crc16_q ^ s_crc_xorv_q[15:0];
+          `CRC16_8005_MODE: s_crc_data_d = s_crc16_q ^ s_crc_xorv_q[15:0];
+          default:          s_crc_data_d = s_crc8_q ^ s_crc_xorv_q[7:0];
+        endcase
       end
     end
   end
@@ -158,6 +190,44 @@ module apb4_crc (
     end
   end
 
+  for (genvar i = 0; i < 8; i++) begin
+    assign s_crc8_q_rev[i] = s_crc8_q[7-i];
+  end
+
+  always_comb begin
+    s_crc8_d = s_crc8_q;
+    if (s_bit_clr) begin
+      s_crc8_d = s_crc_init_q[7:0];
+    end else if (fsm_state_q != IDLE) begin
+      s_crc8_d = s_crc8_qq;
+    end
+  end
+
+  dffr #(8) u_crc8_dffr (
+      apb4.pclk,
+      apb4.presetn,
+      s_crc8_d,
+      s_crc8_q
+  );
+
+  always_comb begin
+    s_crc8_data = '0;
+    if (fsm_state_q == SHIFT1) begin
+      s_crc8_data = s_crc_data_q[7:6];
+    end else if (fsm_state_q == SHIFT2) begin
+      s_crc8_data = s_crc_data_q[5:4];
+    end else if (fsm_state_q == SHIFT3) begin
+      s_crc8_data = s_crc_data_q[3:2];
+    end else if (fsm_state_q == SHIFT4) begin
+      s_crc8_data = s_crc_data_q[1:0];
+    end
+  end
+
+  crc8_07 u_crc8_07 (
+      .data_i(s_crc8_data),
+      .crc_i (s_crc8_q),
+      .crc_o (s_crc8_qq)
+  );
 
   for (genvar i = 0; i < 16; i++) begin
     assign s_crc16_q_rev[i] = s_crc16_q[15-i];
