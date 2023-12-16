@@ -22,7 +22,8 @@ module apb4_crc (
     SHIFT1,
     SHIFT2,
     SHIFT3,
-    SHIFT4
+    SHIFT4,
+    DONE
   } fsm_t;
 
   logic [3:0] s_apb4_addr;
@@ -32,23 +33,32 @@ module apb4_crc (
   logic [`CRC_DATA_WIDTH-1:0] s_crc_data_d, s_crc_data_q;
   logic [`CRC_STAT_WIDTH-1:0] s_crc_stat_d, s_crc_stat_q;
   logic s_apb4_wr_hdshk, s_apb4_rd_hdshk, s_crc_wr_val;
-  logic [15:0] s_crc16_d, s_crc16_q, s_crc16_qq;
+  logic [15:0] s_crc16_wr, s_crc16_wr_rev;
+  logic [15:0] s_crc16_d, s_crc16_q, s_crc16_qq, s_crc16_q_rev;
   logic [3:0] s_crc16_data;
   fsm_t fsm_state_d, fsm_state_q;
   logic s_bit_revout, s_bit_revin, s_bit_clr, s_bit_en;
-  logic s_bit_done, s_done_re;
+  logic s_bit_done;
 
-  assign s_apb4_addr = apb4.paddr[5:2];
+  assign s_apb4_addr     = apb4.paddr[5:2];
   assign s_apb4_wr_hdshk = apb4.psel && apb4.penable && apb4.pwrite;
   assign s_apb4_rd_hdshk = apb4.psel && apb4.penable && (~apb4.pwrite);
-  assign apb4.pready = 1'b1;
-  assign apb4.pslverr = 1'b0;
-  assign s_bit_revout = s_crc_ctrl_q[3];
-  assign s_bit_revin = s_crc_ctrl_q[2];
-  assign s_bit_clr = s_crc_ctrl_q[1];
-  assign s_bit_en = s_crc_ctrl_q[0];
-  assign s_bit_done = s_crc_stat_q[0];
+  assign apb4.pready     = 1'b1;
+  assign apb4.pslverr    = 1'b0;
+  assign s_bit_revout    = s_crc_ctrl_q[3];
+  assign s_bit_revin     = s_crc_ctrl_q[2];
+  assign s_bit_clr       = s_crc_ctrl_q[1];
+  assign s_bit_en        = s_crc_ctrl_q[0];
+  assign s_bit_done      = s_crc_stat_q[0];
 
+  assign s_crc16_wr      = apb4.pwdata[15:0];
+  for (genvar i = 0; i < 16; i++) begin
+    if (i < 8) begin
+      assign s_crc16_wr_rev[i] = s_crc16_wr[7-i];
+    end else begin
+      assign s_crc16_wr_rev[i] = s_crc16_wr[15-(i-8)];
+    end
+  end
   assign s_crc_ctrl_d = (s_apb4_wr_hdshk && s_apb4_addr == `CRC_CTRL) ? apb4.pwdata[`CRC_CTRL_WIDTH-1:0] : s_crc_ctrl_q;
   dffr #(`CRC_CTRL_WIDTH) u_crc_ctrl_dffr (
       apb4.pclk,
@@ -76,9 +86,17 @@ module apb4_crc (
   always_comb begin
     s_crc_data_d = s_crc_data_q;
     if (s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) begin
-      s_crc_data_d = apb4.pwdata[`CRC_DATA_WIDTH-1:0];
-    end else if (s_done_re) begin
-      s_crc_data_d = s_crc16_q ^ s_crc_xorv_q;
+      if (s_bit_revin) begin
+        s_crc_data_d = s_crc16_wr_rev;
+      end else begin
+        s_crc_data_d = s_crc16_wr;  // TODO: max support 32 bit
+      end
+    end else if (fsm_state_q == DONE) begin
+      if (s_bit_revout) begin
+        s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q;
+      end else begin
+        s_crc_data_d = s_crc16_q ^ s_crc_xorv_q;
+      end
     end
   end
   dffr #(`CRC_DATA_WIDTH) u_crc_data_dffr (
@@ -90,20 +108,13 @@ module apb4_crc (
 
   always_comb begin
     s_crc_stat_d    = s_crc_stat_q;
-    s_crc_stat_d[0] = fsm_state_q == IDLE;
+    s_crc_stat_d[0] = fsm_state_q == DONE;
   end
   dffr #(`CRC_STAT_WIDTH) u_crc_stat_dffr (
       apb4.pclk,
       apb4.presetn,
       s_crc_stat_d,
       s_crc_stat_q
-  );
-
-  edge_det_re #(1, 1) u_edge_det_re (
-      apb4.pclk,
-      apb4.presetn,
-      fsm_state_q == SHIFT4,
-      s_done_re
   );
 
   always_comb begin
@@ -132,7 +143,8 @@ module apb4_crc (
         SHIFT1:  fsm_state_d = SHIFT2;
         SHIFT2:  fsm_state_d = SHIFT3;
         SHIFT3:  fsm_state_d = SHIFT4;
-        SHIFT4:  fsm_state_d = IDLE;
+        SHIFT4:  fsm_state_d = DONE;
+        DONE:    fsm_state_d = IDLE;
         default: fsm_state_d = IDLE;
       endcase
     end
@@ -146,10 +158,16 @@ module apb4_crc (
     end
   end
 
+
+  for (genvar i = 0; i < 16; i++) begin
+    assign s_crc16_q_rev[i] = s_crc16_q[15-i];
+  end
   always_comb begin
-    s_crc16_d = s_crc16_qq;
+    s_crc16_d = s_crc16_q;
     if (s_bit_clr) begin
       s_crc16_d = s_crc_init_q[15:0];
+    end else if (fsm_state_q != IDLE) begin
+      s_crc16_d = s_crc16_qq;
     end
   end
 

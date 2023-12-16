@@ -13,15 +13,15 @@
 
 /* register mapping
  * CRC_CTRL:
- * BITS:   | 31:5 | 3      | 2     | 1   | 0  |
- * FIELDS: | RES  | REVOUT | REVIN | CLR | EN |
- * PERMS:  | NONE | RW     | RW    | RW  | RW |
- * --------------------------------------------
+ * BITS:   | 31:6 | 5:4  | 3      | 2     | 1   | 0  |
+ * FIELDS: | RES  | MODE | REVOUT | REVIN | CLR | EN |
+ * PERMS:  | NONE | RW   | RW     | RW    | RW  | RW |
+ * ---------------------------------------------------
  * CRC_INIT:
  * BITS:   | 31:0 |
  * FIELDS: | INIT |
  * PERMS:  | RW   |
- * --------------------------------------------
+ * ---------------------------------------------------
  * CRC_XORV:
  * BITS:   | 31:0 |
  * FIELDS: | XORV |
