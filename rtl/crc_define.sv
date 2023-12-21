@@ -13,9 +13,9 @@
 
 /* register mapping
  * CRC_CTRL:
- * BITS:   | 31:6 | 5:4  | 3      | 2     | 1   | 0  |
- * FIELDS: | RES  | MODE | REVOUT | REVIN | CLR | EN |
- * PERMS:  | NONE | RW   | RW     | RW    | RW  | RW |
+ * BITS:   | 31:7 | 6    | 5:4  | 3      | 2     | 1   | 0  |
+ * FIELDS: | RES  | INIT | MODE | REVOUT | REVIN | CLR | EN |
+ * PERMS:  | NONE | RW   | RW   | RW     | RW    | RW  | RW |
  * ---------------------------------------------------
  * CRC_INIT:
  * BITS:   | 31:0 |
@@ -33,9 +33,9 @@
  * PERMS:  | RW   |
  * --------------------------------------------
  * CRC_STAT: interrupt info
- * BITS:   | 31:1 | 0    |
- * FIELDS: | DATA | done |
- * PERMS:  | R    |  R   |
+ * BITS:   | 31:1  | 1    | 0    |
+ * FIELDS: | RES   | CMP  | DOEN |
+ * PERMS:  | NONE  | R    |  R   |
  * --------------------------------------------
 */
 
@@ -52,17 +52,24 @@
 `define CRC_DATA_ADDR {26'b0, `CRC_DATA, 2'b00}
 `define CRC_STAT_ADDR {26'b0, `CRC_STAT, 2'b00}
 
-`define CRC_CTRL_WIDTH 6
+`define CRC_CTRL_WIDTH 7
 `define CRC_INIT_WIDTH 32
 `define CRC_XORV_WIDTH 32
 `define CRC_DATA_WIDTH 32
-`define CRC_STAT_WIDTH 1
+`define CRC_STAT_WIDTH 2
 
-`define CRC8_MODE 2'b00
+`define CRC8_MODE       2'b00
 `define CRC16_1021_MODE 2'b01
 `define CRC16_8005_MODE 2'b10
-`define CRC32_MODE 2'b11
+`define CRC32_MODE      2'b11
 
+  
+`define FSM_IDLE   3'b000
+`define FSM_SHIFT1 3'b001
+`define FSM_SHIFT2 3'b010
+`define FSM_SHIFT3 3'b011
+`define FSM_SHIFT4 3'b100
+`define FSM_DONE   3'b101
 // verilog_format: on
 
 `endif
