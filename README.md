@@ -1,5 +1,20 @@
 # CRC
 
+<p>
+    <a href=".">
+      <img src="https://img.shields.io/badge/RTL%20dev-in%20progress-silver?style=flat-square">
+    </a>
+    <a href=".">
+      <img src="https://img.shields.io/badge/VCS%20sim-in%20progress-silver?style=flat-square">
+    </a>
+    <a href=".">
+      <img src="https://img.shields.io/badge/FPGA%20verif-no%20start-wheat?style=flat-square">
+    </a>
+    <a href=".">
+      <img src="https://img.shields.io/badge/Tapeout%20test-no%20start-wheat?style=flat-square">
+    </a>
+</p>
+
 ## Features
 * Max 32-bit CRC code calculation
 * Multiple CRC polynomials support
