@@ -37,7 +37,9 @@ program automatic test_top (
     crc_hdl.init();
     crc_hdl.test_reset_reg();
     crc_hdl.test_wr_rd_reg();
-    crc_hdl.test_crc();
+    crc_hdl.test_crc8();
+    // crc_hdl.test_crc16();
+    // crc_hdl.test_crc();
 
     Helper::end_banner();
     #20000 $finish;
