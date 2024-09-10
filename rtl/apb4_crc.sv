@@ -16,15 +16,6 @@ module apb4_crc (
     apb4_if.slave apb4
 );
 
-  typedef enum logic [2:0] {
-    IDLE,
-    SHIFT1,
-    SHIFT2,
-    SHIFT3,
-    SHIFT4,
-    DONE
-  } lut_fsm_t;
-
   logic [3:0] s_apb4_addr;
   logic s_apb4_wr_hdshk, s_apb4_rd_hdshk;
   logic [`CRC_CTRL_WIDTH-1:0] s_crc_ctrl_d, s_crc_ctrl_q;
@@ -37,35 +28,23 @@ module apb4_crc (
   logic s_crc_data_en;
   logic [`CRC_STAT_WIDTH-1:0] s_crc_stat_d, s_crc_stat_q;
   logic s_crc_stat_en;
-  logic s_bit_en, s_bit_ld, s_bit_revin, s_bit_revout, s_bit_init, s_bit_init_re;
-  logic s_bit_done, s_bit_cmp;
-  logic [1:0] s_bit_crc_mode;
+  logic s_bit_en, s_bit_ld, s_bit_revin, s_bit_revout, s_bit_done;
+  logic [1:0] s_bit_mode;
 
-  // crc8
-  logic [7:0] s_crc8_wr, s_crc8_wr_rev;
+
+  logic [2:0] s_calc_cnt_d, s_calc_cnt_q;
+  logic s_calc_cnt_en;
+  logic s_calc_start_d, s_calc_start_q, s_trans_done;
+  logic [7:0] s_crc_data_in;
+  // write origin data
+  logic [7:0] s_crc_data8_wr, s_crc_data8_wr_rev;
+  logic [15:0] s_crc_data16_wr, s_crc_data16_wr_rev;
+  logic [23:0] s_crc_data24_wr, s_crc_data24_wr_rev;
+  logic [31:0] s_crc_data32_wr, s_crc_data32_wr_rev;
+  // crc result
   logic [7:0] s_crc8_d, s_crc8_q, s_crc8_qq, s_crc8_q_rev;
-  logic [1:0] s_crc8_data;
-  // crc16
-  logic [15:0] s_crc16_wr, s_crc16_wr_rev;
-  logic [15:0] s_crc16_d, s_crc16_q, s_crc16_qq, s_crc16_q_rev;
-  logic [15:0] s_crc16_qq_1021, s_crc16_qq_8005;
-  logic [3:0] s_crc16_data;
-  // crc32
-  logic [31:0] s_crc32_wr, s_crc32_wr_rev;
+  logic [15:0] s_crc16_d, s_crc16_q, s_crc16_qq_1021, s_crc16_qq_8005, s_crc16_q_rev;
   logic [31:0] s_crc32_d, s_crc32_q, s_crc32_qq, s_crc32_q_rev;
-  logic [7:0] s_crc32_data;
-  // lut
-  lut_fsm_t s_lut_fsm_d, s_lut_fsm_q;
-  logic [255:0][31:0] s_lut_d, s_lut_q;
-  logic s_lut_en;
-  logic [8:0] s_lut_idx_d, s_lut_idx_q;
-  logic       s_lut_idx_en;
-  // user idx
-  logic [4:0] s_user_msb_idx;
-  logic [2:0] s_user_len;
-  logic [15:0] s_user_crc16_d, s_user_crc16_q;
-  logic [2:0] s_user_cnt_d, s_user_cnt_q;
-  logic [7:0] s_user_wr_data;
 
 
   assign s_apb4_addr     = apb4.paddr[5:2];
@@ -75,56 +54,62 @@ module apb4_crc (
   assign apb4.pslverr    = 1'b0;
 
   assign s_bit_en        = s_crc_ctrl_q[0];
-  assign s_bit_ld        = s_crc_ctrl_q[1];
-  assign s_bit_revin     = s_crc_ctrl_q[2];
-  assign s_bit_revout    = s_crc_ctrl_q[3];
-  assign s_bit_crc_mode  = s_crc_ctrl_q[5:4];
-  assign s_bit_init      = s_crc_ctrl_q[6];
+  assign s_bit_revin     = s_crc_ctrl_q[1];
+  assign s_bit_revout    = s_crc_ctrl_q[2];
+  assign s_bit_mode      = s_crc_ctrl_q[4:3];
+  assign s_bit_size      = s_crc_ctrl_q[6:5];
   assign s_bit_done      = s_crc_stat_q[0];
-  assign s_bit_cmp       = s_crc_stat_q[1];
 
-  assign s_crc8_wr       = s_bit_init ? s_lut_idx_q : apb4.pwdata[7:0];
-  assign s_crc16_wr      = s_bit_init ? s_lut_idx_q : apb4.pwdata[15:0];
-  assign s_crc32_wr      = s_bit_init ? s_lut_idx_q : apb4.pwdata[31:0];
+  assign s_crc_data8_wr  = apb4.pwdata[7:0];
+  assign s_crc_data16_wr = apb4.pwdata[15:0];
+  assign s_crc_data24_wr = apb4.pwdata[23:0];
+  assign s_crc_data32_wr = apb4.pwdata[31:0];
+  assign s_trans_done    = s_calc_cnt_q == s_bit_size + 1'b1;
 
-  //crc8
-  for (genvar i = 0; i < 8; i++) begin
-    assign s_crc8_wr_rev[i] = s_crc8_wr[7-i];
+  // data8
+  for (genvar i = 0; i < 8; i++) begin : DATA8_REV_BLOCK
+    assign s_crc_data8_wr_rev[i] = s_crc_data8_wr[7-i];
+    assign s_crc8_q_rev[i]       = s_crc8_q[7-i];
   end
-  for (genvar i = 0; i < 8; i++) begin
-    assign s_crc8_q_rev[i] = s_crc8_q[7-i];
-  end
 
-  // crc16
-  for (genvar i = 0; i < 16; i++) begin
+  // data16
+  for (genvar i = 0; i < 16; i++) begin : DATA16_REV_BLOCK
     if (i < 8) begin
-      assign s_crc16_wr_rev[i] = s_crc16_wr[7-i];
+      assign s_crc_data16_wr_rev[i] = s_crc_data16_wr[7-i];
     end else begin
-      assign s_crc16_wr_rev[i] = s_crc16_wr[15-(i-8)];
+      assign s_crc_data16_wr_rev[i] = s_crc_data16_wr[15-(i-8)];
     end
-  end
-  for (genvar i = 0; i < 16; i++) begin
     assign s_crc16_q_rev[i] = s_crc16_q[15-i];
   end
 
-  // crc32
-  for (genvar i = 0; i < 32; i++) begin
+  // data24
+  for (genvar i = 0; i < 24; i++) begin : DATA24_REV_BLOCK
     if (i < 8) begin
-      assign s_crc32_wr_rev[i] = s_crc32_wr[7-i];
+      assign s_crc_data24_wr_rev[i] = s_crc_data24_wr[7-i];
     end else if (i < 16) begin
-      assign s_crc32_wr_rev[i] = s_crc32_wr[15-(i-8)];
-    end else if (i < 24) begin
-      assign s_crc32_wr_rev[i] = s_crc32_wr[23-(i-16)];
+      assign s_crc_data24_wr_rev[i] = s_crc_data24_wr[15-(i-8)];
     end else begin
-      assign s_crc32_wr_rev[i] = s_crc32_wr[31-(i-24)];
+      assign s_crc_data24_wr_rev[i] = s_crc_data24_wr[23-(i-8)];
     end
   end
-  for (genvar i = 0; i < 32; i++) begin
+
+  // data32
+  for (genvar i = 0; i < 32; i++) begin : DATA32_REV_BLOCK
+    if (i < 8) begin
+      assign s_crc_data32_wr_rev[i] = s_crc_data32_wr[7-i];
+    end else if (i < 16) begin
+      assign s_crc_data32_wr_rev[i] = s_crc_data32_wr[15-(i-8)];
+    end else if (i < 24) begin
+      assign s_crc_data32_wr_rev[i] = s_crc_data32_wr[23-(i-16)];
+    end else begin
+      assign s_crc_data32_wr_rev[i] = s_crc_data32_wr[31-(i-24)];
+    end
     assign s_crc32_q_rev[i] = s_crc32_q[31-i];
   end
 
+
   assign s_crc_ctrl_en = s_apb4_wr_hdshk && s_apb4_addr == `CRC_CTRL;
-  assign s_crc_ctrl_d  = s_crc_ctrl_en ? apb4.pwdata[`CRC_CTRL_WIDTH-1:0] : s_crc_ctrl_q;
+  assign s_crc_ctrl_d  = apb4.pwdata[`CRC_CTRL_WIDTH-1:0];
   dffer #(`CRC_CTRL_WIDTH) u_crc_ctrl_dffer (
       apb4.pclk,
       apb4.presetn,
@@ -134,7 +119,7 @@ module apb4_crc (
   );
 
   assign s_crc_init_en = s_apb4_wr_hdshk && s_apb4_addr == `CRC_INIT;
-  assign s_crc_init_d  = s_crc_init_en ? apb4.pwdata[`CRC_INIT_WIDTH-1:0] : s_crc_init_q;
+  assign s_crc_init_d  = apb4.pwdata[`CRC_INIT_WIDTH-1:0];
   dffer #(`CRC_INIT_WIDTH) u_crc_init_dffer (
       apb4.pclk,
       apb4.presetn,
@@ -144,7 +129,7 @@ module apb4_crc (
   );
 
   assign s_crc_xorv_en = s_apb4_wr_hdshk && s_apb4_addr == `CRC_XORV;
-  assign s_crc_xorv_d  = s_crc_xorv_en ? apb4.pwdata[`CRC_XORV_WIDTH-1:0] : s_crc_xorv_q;
+  assign s_crc_xorv_d  = apb4.pwdata[`CRC_XORV_WIDTH-1:0];
   dffer #(`CRC_XORV_WIDTH) u_crc_xorv_dffer (
       apb4.pclk,
       apb4.presetn,
@@ -153,62 +138,39 @@ module apb4_crc (
       s_crc_xorv_q
   );
 
-  // TODO: simplify sel logic impl
-  assign s_crc_data_en = s_bit_init || (s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) || (s_lut_fsm_q == DONE);
+  assign s_crc_data_en = s_bit_en && ((s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) || s_trans_done);
   always_comb begin
     s_crc_data_d = s_crc_data_q;
-    if (s_bit_init) begin
+    if (s_bit_en && s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) begin  // write origin data
       if (s_bit_revin) begin
-        unique case (s_bit_crc_mode)
-          `CRC8_MODE:       s_crc_data_d = s_crc8_wr_rev;
-          `CRC16_1021_MODE: s_crc_data_d = s_crc16_wr_rev;
-          `CRC16_8005_MODE: s_crc_data_d = s_crc16_wr_rev;
-          `CRC32_MODE:      s_crc_data_d = s_crc32_wr_rev;
-          default:          s_crc_data_d = s_crc8_wr_rev;
+        unique case (s_bit_size)
+          `CRC_8_SIZES:  s_crc_data_d = s_crc_data8_wr_rev;
+          `CRC_16_SIZES: s_crc_data_d = s_crc_data16_wr_rev;
+          `CRC_24_SIZES: s_crc_data_d = s_crc_data24_wr_rev;
+          `CRC_32_SIZES: s_crc_data_d = s_crc_data32_wr_rev;
         endcase
       end else begin
-        unique case (s_bit_crc_mode)
-          `CRC8_MODE:       s_crc_data_d = s_crc8_wr;
-          `CRC16_1021_MODE: s_crc_data_d = s_crc16_wr;
-          `CRC16_8005_MODE: s_crc_data_d = s_crc16_wr;
-          `CRC32_MODE:      s_crc_data_d = s_crc32_wr;
-          default:          s_crc_data_d = s_crc8_wr;
+        unique case (s_bit_size)
+          `CRC_8_SIZES:  s_crc_data_d = s_crc_data8_wr;
+          `CRC_16_SIZES: s_crc_data_d = s_crc_data16_wr;
+          `CRC_24_SIZES: s_crc_data_d = s_crc_data24_wr;
+          `CRC_32_SIZES: s_crc_data_d = s_crc_data32_wr;
         endcase
       end
-    end else if (s_bit_en && s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) begin
-      if (s_bit_revin) begin
-        unique case (s_bit_crc_mode)
-          `CRC8_MODE:       s_crc_data_d = s_crc8_wr_rev;
-          `CRC16_1021_MODE: s_crc_data_d = s_crc16_wr_rev;
-          `CRC16_8005_MODE: s_crc_data_d = s_crc16_wr_rev;
-          `CRC32_MODE:      s_crc_data_d = s_crc32_wr_rev;
-          default:          s_crc_data_d = s_crc8_wr_rev;
-        endcase
-      end else begin
-        unique case (s_bit_crc_mode)
-          `CRC8_MODE:       s_crc_data_d = s_crc8_wr;
-          `CRC16_1021_MODE: s_crc_data_d = s_crc16_wr;
-          `CRC16_8005_MODE: s_crc_data_d = s_crc16_wr;
-          `CRC32_MODE:      s_crc_data_d = s_crc32_wr;
-          default:          s_crc_data_d = s_crc8_wr;
-        endcase
-      end
-    end else if (s_bit_en && s_lut_fsm_q == DONE) begin
+    end else if (s_bit_en && s_trans_done) begin  // write result
       if (s_bit_revout) begin
-        unique case (s_bit_crc_mode)
+        unique case (s_bit_mode)
           `CRC8_MODE:       s_crc_data_d = s_crc8_q_rev ^ s_crc_xorv_q[7:0];
           `CRC16_1021_MODE: s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
           `CRC16_8005_MODE: s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
           `CRC32_MODE:      s_crc_data_d = s_crc32_q_rev ^ s_crc_xorv_q[31:0];
-          default:          s_crc_data_d = s_crc8_q_rev ^ s_crc_xorv_q[7:0];
         endcase
       end else begin
-        unique case (s_bit_crc_mode)
+        unique case (s_bit_mode)
           `CRC8_MODE:       s_crc_data_d = s_crc8_q ^ s_crc_xorv_q[7:0];
           `CRC16_1021_MODE: s_crc_data_d = s_crc16_q ^ s_crc_xorv_q[15:0];
           `CRC16_8005_MODE: s_crc_data_d = s_crc16_q ^ s_crc_xorv_q[15:0];
           `CRC32_MODE:      s_crc_data_d = s_crc32_q ^ s_crc_xorv_q[31:0];
-          default:          s_crc_data_d = s_crc8_q ^ s_crc_xorv_q[7:0];
         endcase
       end
     end
@@ -221,10 +183,7 @@ module apb4_crc (
       s_crc_data_q
   );
 
-  always_comb begin
-    s_crc_stat_d[0] = s_lut_fsm_q == DONE;
-    s_crc_stat_d[1] = s_lut_idx_q == 9'd256;
-  end
+  assign s_crc_stat_d[0] = s_trans_done;
   dffr #(`CRC_STAT_WIDTH) u_crc_stat_dffr (
       apb4.pclk,
       apb4.presetn,
@@ -246,100 +205,54 @@ module apb4_crc (
     end
   end
 
-  edge_det_re #(
-      .STAGE     (2),
-      .DATA_WIDTH(1)
-  ) u_lut_init_edge_det_re (
-      .clk_i  (apb4.pclk),
-      .rst_n_i(apb4.presetn),
-      .dat_i  (s_bit_init),
-      .re_o   (s_bit_init_re)
-  );
-
-  assign s_lut_idx_en = s_bit_init_re || (s_lut_fsm_q == DONE);
+  // NOTE: need to add signal to clear the reg
   always_comb begin
-    s_lut_idx_d = s_lut_idx_q;
-    if (s_bit_init_re) begin
-      s_lut_idx_d = '0;
-    end else if (s_lut_fsm_q == DONE) begin
-      s_lut_idx_d = s_lut_idx_q + 1'b1;
+    s_calc_start_d = s_calc_start_q;
+    if (s_bit_en && s_calc_start_q == 1'b1 && s_trans_done) begin
+      s_calc_start_d = 1'b0;
+    end else if(s_bit_en && s_calc_start_q == 1'b0 && (s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA)) begin
+      s_calc_start_d = 1'b1;
     end
   end
-  dffer #(9) u_lut_idx_dffer (
+  dffr #(1) u_calc_start_dffr (
       apb4.pclk,
       apb4.presetn,
-      s_lut_idx_en,
-      s_lut_idx_d,
-      s_lut_idx_q
+      s_calc_start_d,
+      s_calc_start_q
   );
 
-  assign s_lut_en = s_bit_init_re || (s_lut_fsm_q == DONE);
-  always_comb begin
-    s_lut_d = s_lut_q;
-    if (s_bit_init_re) begin
-      s_lut_d = '0;
-    end else if (s_lut_fsm_q == DONE) begin
-      if (s_bit_revout) begin
-        unique case (s_bit_crc_mode)
-          `CRC8_MODE:       s_lut_d[s_lut_idx_q] = s_crc8_q_rev ^ s_crc_xorv_q[7:0];
-          `CRC16_1021_MODE: s_lut_d[s_lut_idx_q] = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
-          `CRC16_8005_MODE: s_lut_d[s_lut_idx_q] = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
-          `CRC32_MODE:      s_lut_d[s_lut_idx_q] = s_crc32_q_rev ^ s_crc_xorv_q[31:0];
-          default:          s_lut_d[s_lut_idx_q] = s_crc8_q_rev ^ s_crc_xorv_q[7:0];
-        endcase
-      end else begin
-        unique case (s_bit_crc_mode)
-          `CRC8_MODE:       s_lut_d[s_lut_idx_q] = s_crc8_q ^ s_crc_xorv_q[7:0];
-          `CRC16_1021_MODE: s_lut_d[s_lut_idx_q] = s_crc16_q ^ s_crc_xorv_q[15:0];
-          `CRC16_8005_MODE: s_lut_d[s_lut_idx_q] = s_crc16_q ^ s_crc_xorv_q[15:0];
-          `CRC32_MODE:      s_lut_d[s_lut_idx_q] = s_crc32_q ^ s_crc_xorv_q[31:0];
-          default:          s_lut_d[s_lut_idx_q] = s_crc8_q ^ s_crc_xorv_q[7:0];
-        endcase
-      end
-      // $display("%t s_lut_d[%d]: %h", $time, s_lut_idx_q, s_lut_d[s_lut_idx_q]);
-    end
-  end
-  dffer #(256 * 32) u_lut_dffer (
+  assign s_calc_cnt_en = s_bit_en & s_calc_start_q;
+  assign s_calc_cnt_d  = s_trans_done ? '0 : s_calc_cnt_q + 1'b1;
+  dffer #(3) u_calc_cnt_dffer (
       apb4.pclk,
       apb4.presetn,
-      s_lut_en,
-      s_lut_d,
-      s_lut_q
+      s_calc_cnt_en,
+      s_calc_cnt_d,
+      s_calc_cnt_q
   );
 
+
   always_comb begin
-    s_lut_fsm_d = s_lut_fsm_q;
-    if (s_bit_init_re) begin
-      s_lut_fsm_d = IDLE;
-    end else if (s_bit_init) begin
-      unique case (s_lut_fsm_q)
-        IDLE:
-        if (s_lut_idx_q < 256) begin
-          s_lut_fsm_d = SHIFT1;
-        end
-        SHIFT1:  s_lut_fsm_d = SHIFT2;
-        SHIFT2:  s_lut_fsm_d = SHIFT3;
-        SHIFT3:  s_lut_fsm_d = SHIFT4;
-        SHIFT4:  s_lut_fsm_d = DONE;
-        DONE:    s_lut_fsm_d = IDLE;
-        default: s_lut_fsm_d = IDLE;
-      endcase
-    end
-  end
-  always_ff @(posedge apb4.pclk, negedge apb4.presetn) begin
-    if (~apb4.presetn) begin
-      s_lut_fsm_q <= IDLE;
-    end else begin
-      s_lut_fsm_q <= #1 s_lut_fsm_d;
-    end
+    unique case (s_calc_cnt_q)
+      3'b000:   s_crc_data_in = s_crc_data_q[7:0];
+      3'b001:   s_crc_data_in = s_crc_data_q[15:8];
+      3'b010:   s_crc_data_in = s_crc_data_q[23:16];
+      3'b011:   s_crc_data_in = s_crc_data_q[31:24];
+      default: s_crc_data_in = s_crc_data_q[7:0];
+    endcase
   end
 
+  crc8_07 u_crc8_07 (
+      .data_i(s_crc_data_in),
+      .crc_i (s_crc8_q),
+      .crc_o (s_crc8_qq)
+  );
 
   always_comb begin
     s_crc8_d = s_crc8_q;
-    if (s_bit_ld) begin
+    if (s_calc_start_d) begin 
       s_crc8_d = s_crc_init_q[7:0];
-    end else if (s_lut_fsm_q != IDLE) begin
+    end else if (~s_trans_done) begin
       s_crc8_d = s_crc8_qq;
     end
   end
@@ -350,32 +263,24 @@ module apb4_crc (
       s_crc8_q
   );
 
-  always_comb begin
-    s_crc8_data = '0;
-    if (s_lut_fsm_q == SHIFT1) begin
-      s_crc8_data = s_crc_data_q[7:6];
-    end else if (s_lut_fsm_q == SHIFT2) begin
-      s_crc8_data = s_crc_data_q[5:4];
-    end else if (s_lut_fsm_q == SHIFT3) begin
-      s_crc8_data = s_crc_data_q[3:2];
-    end else if (s_lut_fsm_q == SHIFT4) begin
-      s_crc8_data = s_crc_data_q[1:0];
-    end
-  end
-
-  crc8_07 u_crc8_07 (
-      .data_i(s_crc8_data),
-      .crc_i (s_crc8_q),
-      .crc_o (s_crc8_qq)
+  crc16_1021 u_crc16_1021 (
+      .data_i(s_crc_data_in),
+      .crc_i (s_crc16_q),
+      .crc_o (s_crc16_qq_1021)
   );
 
+  crc16_8005 u_crc16_8005 (
+      .data_i(s_crc_data_in),
+      .crc_i (s_crc16_q),
+      .crc_o (s_crc16_qq_8005)
+  );
 
   always_comb begin
     s_crc16_d = s_crc16_q;
-    if (s_bit_ld || s_lut_fsm_q == DONE) begin
+    if (s_calc_start_d) begin 
       s_crc16_d = s_crc_init_q[15:0];
-    end else if (s_bit_init && s_lut_fsm_q != IDLE) begin
-      s_crc16_d = s_crc16_qq;
+    end else if (~s_trans_done) begin
+      s_crc16_d = s_bit_mode == `CRC16_1021_MODE ? s_crc16_qq_1021 : s_crc16_qq_8005;
     end
   end
   dffr #(16) u_crc16_dffr (
@@ -385,37 +290,18 @@ module apb4_crc (
       s_crc16_q
   );
 
-  always_comb begin
-    s_crc16_data = '0;
-    if (s_lut_fsm_q == SHIFT1) begin
-      s_crc16_data = s_crc_data_q[15:12];
-    end else if (s_lut_fsm_q == SHIFT2) begin
-      s_crc16_data = s_crc_data_q[11:8];
-    end else if (s_lut_fsm_q == SHIFT3) begin
-      s_crc16_data = s_crc_data_q[7:4];
-    end else if (s_lut_fsm_q == SHIFT4) begin
-      s_crc16_data = s_crc_data_q[3:0];
-    end
-  end
-
-  assign s_crc16_qq = s_bit_crc_mode == `CRC16_1021_MODE ? s_crc16_qq_1021 : s_crc16_qq_8005;
-  crc16_1021 u_crc16_1021 (
-      .data_i(s_crc16_data),
-      .crc_i (s_crc16_q),
-      .crc_o (s_crc16_qq_1021)
-  );
-  crc16_8005 u_crc16_8005 (
-      .data_i(s_crc16_data),
-      .crc_i (s_crc16_q),
-      .crc_o (s_crc16_qq_8005)
+  crc32_04c11db7 u_crc32_04c11db7 (
+      .data_i(s_crc_data_in),
+      .crc_i (s_crc32_q),
+      .crc_o (s_crc32_qq)
   );
 
 
   always_comb begin
     s_crc32_d = s_crc32_q;
-    if (s_bit_ld) begin
+    if (s_calc_start_d) begin  // NOTE: right?
       s_crc32_d = s_crc_init_q[31:0];
-    end else if (s_lut_fsm_q != IDLE) begin
+    end else if (~s_trans_done) begin  // BUG:
       s_crc32_d = s_crc32_qq;
     end
   end
@@ -425,90 +311,5 @@ module apb4_crc (
       s_crc32_d,
       s_crc32_q
   );
-
-  always_comb begin
-    s_crc32_data = '0;
-    if (s_lut_fsm_q == SHIFT1) begin
-      s_crc32_data = s_crc_data_q[31:24];
-    end else if (s_lut_fsm_q == SHIFT2) begin
-      s_crc32_data = s_crc_data_q[23:16];
-    end else if (s_lut_fsm_q == SHIFT3) begin
-      s_crc32_data = s_crc_data_q[15:8];
-    end else if (s_lut_fsm_q == SHIFT4) begin
-      s_crc32_data = s_crc_data_q[7:0];
-    end
-  end
-  crc32_04c11db7 u_crc32_04c11db7 (
-      .data_i(s_crc32_data),
-      .crc_i (s_crc32_q),
-      .crc_o (s_crc32_qq)
-  );
-
-
-  // calc user crc value
-  always_comb begin
-    s_user_msb_idx = '0;
-    s_user_len     = '0;
-    if (s_crc_data_q[31:28] != '0) begin
-      s_user_msb_idx = 5'd31;
-      s_user_len     = 3'd4;
-    end else if (s_crc_data_q[27:24] != '0) begin
-      s_user_msb_idx = 5'd27;
-      s_user_len     = 3'd4;
-    end else if (s_crc_data_q[23:20] != '0) begin
-      s_user_msb_idx = 5'd23;
-      s_user_len     = 3'd3;
-    end else if (s_crc_data_q[19:16] != '0) begin
-      s_user_msb_idx = 5'd19;
-      s_user_len     = 3'd3;
-    end else if (s_crc_data_q[15:12] != '0) begin
-      s_user_msb_idx = 5'd15;
-      s_user_len     = 3'd2;
-    end else if (s_crc_data_q[11:8] != '0) begin
-      s_user_msb_idx = 5'd1;
-      s_user_len     = 3'd2;
-    end else if (s_crc_data_q[7:4] != '0) begin
-      s_user_msb_idx = 5'd7;
-      s_user_len     = 3'd1;
-    end else if (s_crc_data_q[3:0] != '0) begin
-      s_user_msb_idx = 5'd23;
-      s_user_len     = 3'd1;
-    end else begin
-      s_user_msb_idx = '0;
-      s_user_len     = '0;
-    end
-  end
-
-  // s_user_wr_data
-  always_comb begin
-    s_user_cnt_d = s_user_cnt_q;
-    if (s_bit_ld) begin
-      s_user_cnt_d = '0;
-    end else if (s_bit_en) begin
-      s_user_cnt_d = s_user_cnt_q + 1'b1;
-    end
-  end
-  dffr #(3) u_user_cnt_dffr (
-      apb4.pclk,
-      apb4.presetn,
-      s_user_cnt_d,
-      s_user_cnt_q
-  );
-
-  always_comb begin
-    s_user_crc16_d = s_user_crc16_q;
-    if (s_bit_ld) begin
-      s_user_crc16_d = s_crc_init_q[15:0];
-    end else if (s_bit_en && s_user_cnt_q <= s_user_len) begin  // TODO:
-      s_user_crc16_d = s_user_crc16_q[15:8] ^ s_lut_q[(s_user_crc16_q[7:0])^s_user_wr_data];
-    end
-  end
-  dffr #(16) u_user_crc16_dffr (
-      apb4.pclk,
-      apb4.presetn,
-      s_user_crc16_d,
-      s_user_crc16_q
-  );
-
 
 endmodule
