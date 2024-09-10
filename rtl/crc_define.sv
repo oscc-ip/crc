@@ -13,30 +13,30 @@
 
 /* register mapping
  * CRC_CTRL:
- * BITS:   | 31:7 | 6    | 5:4  | 3      | 2     | 1  | 0  |
- * FIELDS: | RES  | INIT | MODE | REVOUT | REVIN | LD | EN |
- * PERMS:  | NONE | RW   | RW   | RW     | RW    | RW | RW |
- * ---------------------------------------------------------
+ * BITS:   | 31:7 | 6:5  | 4:3  | 2      | 1     | 0  |
+ * FIELDS: | RES  | SIZE | MODE | REVOUT | REVIN | EN |
+ * PERMS:  | NONE | RW   | RW   | RW     | RW    | RW |
+ * ----------------------------------------------------
  * CRC_INIT:
  * BITS:   | 31:0 |
  * FIELDS: | INIT |
  * PERMS:  | RW   |
- * ----------------------------------------------------------
+ * ----------------------------------------------------
  * CRC_XORV:
  * BITS:   | 31:0 |
  * FIELDS: | XORV |
  * PERMS:  | RW   |
- * ----------------------------------------------------------
+ * ----------------------------------------------------
  * CRC_DATA:
  * BITS:   | 31:0 |
  * FIELDS: | DATA |
  * PERMS:  | RW   |
- * ----------------------------------------------------------
+ * ----------------------------------------------------
  * CRC_STAT:
- * BITS:   | 31:2 | 1   | 0    |
- * FIELDS: | RES  | CMP | DONE |
- * PERMS:  | NONE | R   |  R   |
- * ----------------------------------------------------------
+ * BITS:   | 31:2 | 0    |
+ * FIELDS: | RES  | DONE |
+ * PERMS:  | NONE | RO   |
+ * ----------------------------------------------------
 */
 
 // verilog_format: off
@@ -56,14 +56,18 @@
 `define CRC_INIT_WIDTH 32
 `define CRC_XORV_WIDTH 32
 `define CRC_DATA_WIDTH 32
-`define CRC_STAT_WIDTH 2
+`define CRC_STAT_WIDTH 1
 
 `define CRC8_MODE       2'b00
 `define CRC16_1021_MODE 2'b01
 `define CRC16_8005_MODE 2'b10
 `define CRC32_MODE      2'b11
 
-  
+`define CRC_8_SIZES  2'b00
+`define CRC_16_SIZES 2'b01
+`define CRC_24_SIZES 2'b10
+`define CRC_32_SIZES 2'b11
+
 `define FSM_IDLE   3'b000
 `define FSM_SHIFT1 3'b001
 `define FSM_SHIFT2 3'b010
