@@ -40,7 +40,7 @@ program automatic test_top (
     crc_hdl.test_crc8_simple();
     crc_hdl.test_crc16_simple();
     crc_hdl.test_crc32_simple();
-
+    crc_hdl.test_stat();
     Helper::end_banner();
     #20000 $finish;
   end

@@ -29,7 +29,9 @@ class CRCTest extends APB4Master;
   extern task automatic test_crc8_simple();
   extern task automatic test_crc16_simple();
   extern task automatic test_crc32_simple();
+  extern task automatic test_stat();
   extern task automatic test_crc();
+
 endclass
 
 function CRCTest::new(string name, virtual apb4_if.master apb4);
@@ -904,6 +906,24 @@ task automatic CRCTest::test_crc32_simple();
   this.write(`CRC_DATA_ADDR, 32'h12345678 & {`CRC_DATA_WIDTH{1'b1}});
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hDF8A8A2B, Helper::EQUL);
+endtask
+
+task automatic CRCTest::test_stat();
+  $display("%t === [test stat] ===", $time);
+
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_INIT_ADDR, 32'hFFFF & {`CRC_INIT_WIDTH{1'b1}});
+  this.write(`CRC_XORV_ADDR, 32'hFFFF & {`CRC_XORV_WIDTH{1'b1}});
+  this.write(`CRC_CTRL_ADDR, 32'b00_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h12 & {`CRC_DATA_WIDTH{1'b1}});
+
+  do begin
+    this.read(`CRC_STAT_ADDR);
+    if (super.rd_data[0] == 1'b1) break;
+  end while (1);
+
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hB2C0, Helper::EQUL);
 endtask
 
 task automatic CRCTest::test_crc();
