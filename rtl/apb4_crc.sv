@@ -182,7 +182,15 @@ module apb4_crc (
       s_crc_data_q
   );
 
-  assign s_crc_stat_d[0] = s_trans_done;
+
+  always_comb begin
+    s_crc_stat_d = s_crc_stat_q;
+    if (s_bit_en && s_crc_stat_q == 1'b1 && s_apb4_rd_hdshk && s_apb4_addr == `CRC_STAT) begin
+      s_crc_stat_d = '0;
+    end else if (s_bit_en && s_crc_stat_q == 1'b0 && s_trans_done) begin
+      s_crc_stat_d = '1;
+    end
+  end
   dffr #(`CRC_STAT_WIDTH) u_crc_stat_dffr (
       apb4.pclk,
       apb4.presetn,
@@ -204,7 +212,6 @@ module apb4_crc (
     end
   end
 
-  // NOTE: need to add signal to clear the reg
   always_comb begin
     s_calc_start_d = s_calc_start_q;
     if (s_bit_en && s_calc_start_q == 1'b1 && s_trans_done) begin
