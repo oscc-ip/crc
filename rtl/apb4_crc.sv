@@ -28,10 +28,9 @@ module apb4_crc (
   logic s_crc_data_en;
   logic [`CRC_STAT_WIDTH-1:0] s_crc_stat_d, s_crc_stat_q;
   logic s_crc_stat_en;
-  logic s_bit_en, s_bit_ld, s_bit_revin, s_bit_revout, s_bit_done;
-  logic [1:0] s_bit_mode;
-
-
+  logic s_bit_en, s_bit_revin, s_bit_revout, s_bit_done;
+  logic [1:0] s_bit_mode, s_bit_size;
+  // calc cnt
   logic [2:0] s_calc_cnt_d, s_calc_cnt_q;
   logic s_calc_cnt_en;
   logic s_calc_start_d, s_calc_start_q, s_trans_done;
@@ -64,7 +63,7 @@ module apb4_crc (
   assign s_crc_data16_wr = apb4.pwdata[15:0];
   assign s_crc_data24_wr = apb4.pwdata[23:0];
   assign s_crc_data32_wr = apb4.pwdata[31:0];
-  assign s_trans_done    = s_calc_cnt_q == s_bit_size + 1'b1;
+  assign s_trans_done    = s_calc_cnt_q == s_bit_size + 1'd1;
 
   // data8
   for (genvar i = 0; i < 8; i++) begin : DATA8_REV_BLOCK
@@ -143,23 +142,23 @@ module apb4_crc (
     s_crc_data_d = s_crc_data_q;
     if (s_bit_en && s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) begin  // write origin data
       if (s_bit_revin) begin
-        unique case (s_bit_size)
-          `CRC_8_SIZES:  s_crc_data_d = s_crc_data8_wr_rev;
-          `CRC_16_SIZES: s_crc_data_d = s_crc_data16_wr_rev;
-          `CRC_24_SIZES: s_crc_data_d = s_crc_data24_wr_rev;
-          `CRC_32_SIZES: s_crc_data_d = s_crc_data32_wr_rev;
+        unique case (s_bit_size)  // left align
+          `CRC_8_SIZES:  s_crc_data_d[31:24] = s_crc_data8_wr_rev;
+          `CRC_16_SIZES: s_crc_data_d[31:16] = s_crc_data16_wr_rev;
+          `CRC_24_SIZES: s_crc_data_d[31:8] = s_crc_data24_wr_rev;
+          `CRC_32_SIZES: s_crc_data_d[31:0] = s_crc_data32_wr_rev;
         endcase
       end else begin
         unique case (s_bit_size)
-          `CRC_8_SIZES:  s_crc_data_d = s_crc_data8_wr;
-          `CRC_16_SIZES: s_crc_data_d = s_crc_data16_wr;
-          `CRC_24_SIZES: s_crc_data_d = s_crc_data24_wr;
-          `CRC_32_SIZES: s_crc_data_d = s_crc_data32_wr;
+          `CRC_8_SIZES:  s_crc_data_d[31:24] = s_crc_data8_wr;
+          `CRC_16_SIZES: s_crc_data_d[31:16] = s_crc_data16_wr;
+          `CRC_24_SIZES: s_crc_data_d[31:8] = s_crc_data24_wr;
+          `CRC_32_SIZES: s_crc_data_d[31:0] = s_crc_data32_wr;
         endcase
       end
     end else if (s_bit_en && s_trans_done) begin  // write result
       if (s_bit_revout) begin
-        unique case (s_bit_mode)
+        unique case (s_bit_mode) // trick: right align
           `CRC8_MODE:       s_crc_data_d = s_crc8_q_rev ^ s_crc_xorv_q[7:0];
           `CRC16_1021_MODE: s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
           `CRC16_8005_MODE: s_crc_data_d = s_crc16_q_rev ^ s_crc_xorv_q[15:0];
@@ -234,11 +233,11 @@ module apb4_crc (
 
   always_comb begin
     unique case (s_calc_cnt_q)
-      3'b000:   s_crc_data_in = s_crc_data_q[7:0];
-      3'b001:   s_crc_data_in = s_crc_data_q[15:8];
-      3'b010:   s_crc_data_in = s_crc_data_q[23:16];
-      3'b011:   s_crc_data_in = s_crc_data_q[31:24];
-      default: s_crc_data_in = s_crc_data_q[7:0];
+      3'b000:  s_crc_data_in = s_crc_data_q[31:24];
+      3'b001:  s_crc_data_in = s_crc_data_q[23:16];
+      3'b010:  s_crc_data_in = s_crc_data_q[15:8];
+      3'b011:  s_crc_data_in = s_crc_data_q[7:0];
+      default: s_crc_data_in = s_crc_data_q[31:24];
     endcase
   end
 
@@ -248,9 +247,10 @@ module apb4_crc (
       .crc_o (s_crc8_qq)
   );
 
+  // start_d -> s_crc8_d = s_crc_init_q
   always_comb begin
     s_crc8_d = s_crc8_q;
-    if (s_calc_start_d) begin 
+    if (s_bit_en && s_apb4_wr_hdshk && s_apb4_addr == `CRC_DATA) begin
       s_crc8_d = s_crc_init_q[7:0];
     end else if (~s_trans_done) begin
       s_crc8_d = s_crc8_qq;
@@ -262,6 +262,16 @@ module apb4_crc (
       s_crc8_d,
       s_crc8_q
   );
+
+
+
+
+
+
+
+
+
+
 
   crc16_1021 u_crc16_1021 (
       .data_i(s_crc_data_in),
@@ -277,7 +287,7 @@ module apb4_crc (
 
   always_comb begin
     s_crc16_d = s_crc16_q;
-    if (s_calc_start_d) begin 
+    if (s_calc_start_d) begin
       s_crc16_d = s_crc_init_q[15:0];
     end else if (~s_trans_done) begin
       s_crc16_d = s_bit_mode == `CRC16_1021_MODE ? s_crc16_qq_1021 : s_crc16_qq_8005;
@@ -299,9 +309,9 @@ module apb4_crc (
 
   always_comb begin
     s_crc32_d = s_crc32_q;
-    if (s_calc_start_d) begin  // NOTE: right?
+    if (s_calc_start_d) begin
       s_crc32_d = s_crc_init_q[31:0];
-    end else if (~s_trans_done) begin  // BUG:
+    end else if (~s_trans_done) begin
       s_crc32_d = s_crc32_qq;
     end
   end
