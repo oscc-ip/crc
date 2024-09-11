@@ -88,7 +88,7 @@ module apb4_crc (
     end else if (i < 16) begin
       assign s_crc_data24_wr_rev[i] = s_crc_data24_wr[15-(i-8)];
     end else begin
-      assign s_crc_data24_wr_rev[i] = s_crc_data24_wr[23-(i-8)];
+      assign s_crc_data24_wr_rev[i] = s_crc_data24_wr[23-(i-16)];
     end
   end
 

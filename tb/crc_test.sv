@@ -34,20 +34,20 @@ endclass
 
 function CRCTest::new(string name, virtual apb4_if.master apb4);
   super.new("apb4_master", apb4);
-  this.name = name;
+  this.name   = name;
   this.wr_val = 0;
-  this.apb4 = apb4;
+  this.apb4   = apb4;
 
 endfunction
 
 task automatic CRCTest::test_reset_reg();
   super.test_reset_reg();
   // verilog_format: off
-  this.rd_check(`CRC_CTRL_ADDR, "CTRL REG", 32'b0 & {`CRC_CTRL_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
-  this.rd_check(`CRC_INIT_ADDR, "INIT REG", 32'b0 & {`CRC_INIT_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
-  this.rd_check(`CRC_XORV_ADDR, "XORV REG", 32'b0 & {`CRC_XORV_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
-  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'b0 & {`CRC_DATA_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
-  this.rd_check(`CRC_STAT_ADDR, "STAT REG", 32'b0 & {`CRC_INIT_WIDTH{1'b1}}, Helper::EQUL, Helper::INFO);
+  this.rd_check(`CRC_CTRL_ADDR, "CTRL REG", 32'b0 & {`CRC_CTRL_WIDTH{1'b1}}, Helper::EQUL);
+  this.rd_check(`CRC_INIT_ADDR, "INIT REG", 32'b0 & {`CRC_INIT_WIDTH{1'b1}}, Helper::EQUL);
+  this.rd_check(`CRC_XORV_ADDR, "XORV REG", 32'b0 & {`CRC_XORV_WIDTH{1'b1}}, Helper::EQUL);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'b0 & {`CRC_DATA_WIDTH{1'b1}}, Helper::EQUL);
+  this.rd_check(`CRC_STAT_ADDR, "STAT REG", 32'b0 & {`CRC_INIT_WIDTH{1'b1}}, Helper::EQUL);
   // verilog_format: on
 endtask
 
@@ -66,35 +66,35 @@ task automatic CRCTest::test_crc8_simple();
   $display("%t === [test gen crc8] ===", $time);
   // CRC-8/I-432-1
   // 8Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_INIT_ADDR, 32'h0 & {`CRC_INIT_WIDTH{1'b1}});
-  // this.write(`CRC_XORV_ADDR, 32'h55 & {`CRC_XORV_WIDTH{1'b1}});
-  // this.write(`CRC_CTRL_ADDR, 32'b00_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h12 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h2B, Helper::EQUL, Helper::INFO);
-  // // 16Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b01_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hA4, Helper::EQUL, Helper::INFO);
-  // // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h29, Helper::EQUL, Helper::INFO);
-  // // 32Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b11_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h12345678 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h49, Helper::EQUL, Helper::INFO);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_INIT_ADDR, 32'h0 & {`CRC_INIT_WIDTH{1'b1}});
+  this.write(`CRC_XORV_ADDR, 32'h55 & {`CRC_XORV_WIDTH{1'b1}});
+  this.write(`CRC_CTRL_ADDR, 32'b00_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h12 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h2B, Helper::EQUL);
+  // 16Bits
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b01_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hA4, Helper::EQUL);
+  // 24Bits
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h29, Helper::EQUL);
+  // 32Bits
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b11_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h12345678 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h49, Helper::EQUL);
 
   // CRC-8/ROHC
   // 8Bits
@@ -130,36 +130,36 @@ task automatic CRCTest::test_crc8_simple();
 
 
   // CRC-8/ROHC
-  // // 8Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_INIT_ADDR, 32'h0 & {`CRC_INIT_WIDTH{1'b1}});
-  // this.write(`CRC_XORV_ADDR, 32'h0 & {`CRC_XORV_WIDTH{1'b1}});
-  // this.write(`CRC_CTRL_ADDR, 32'b00_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h12 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h7E, Helper::EQUL);
-  // // 16Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b01_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hF1, Helper::EQUL);
-  // // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h7C, Helper::EQUL);
-  // // 32Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b11_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h12345678 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h1C, Helper::EQUL);
+  // 8Bits
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_INIT_ADDR, 32'h0 & {`CRC_INIT_WIDTH{1'b1}});
+  this.write(`CRC_XORV_ADDR, 32'h0 & {`CRC_XORV_WIDTH{1'b1}});
+  this.write(`CRC_CTRL_ADDR, 32'b00_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h12 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h7E, Helper::EQUL);
+  // 16Bits
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b01_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hF1, Helper::EQUL);
+  // 24Bits
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h7C, Helper::EQUL);
+  // 32Bits
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b11_00_0_0_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h12345678 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h1C, Helper::EQUL);
 endtask
 
 task automatic CRCTest::test_crc16_simple();
@@ -279,12 +279,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hDEC1, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h1090, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h1090, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -311,12 +311,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hCF26, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h7348, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h7348, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -343,12 +343,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD186, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD65C, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD65C, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -375,12 +375,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h213E, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hEF6F, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hEF6F, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -407,12 +407,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h22B0, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h821A, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h821A, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -471,12 +471,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h943F, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hFE53, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hFE53, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_01_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -535,12 +535,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h770D, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hFB36, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hFB36, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -631,12 +631,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h88F2, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h04C9, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h04C9, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -663,12 +663,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hC70C, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h3B47, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h3B47, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -727,12 +727,12 @@ task automatic CRCTest::test_crc16_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h38F3, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hC4B8, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hC4B8, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_10_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -827,12 +827,12 @@ task automatic CRCTest::test_crc32_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h18999699, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_11_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD9C1A93A, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_11_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD9C1A93A, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_11_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -859,12 +859,12 @@ task automatic CRCTest::test_crc32_simple();
   repeat (100) @(posedge this.apb4.pclk);
   this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hE7666966, Helper::EQUL);
   // 24Bits
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_CTRL_ADDR, 32'b10_11_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
-  // repeat (100) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h263E56C5, Helper::EQUL);
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_CTRL_ADDR, 32'b10_11_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.write(`CRC_DATA_ADDR, 32'h123456 & {`CRC_DATA_WIDTH{1'b1}});
+  repeat (100) @(posedge this.apb4.pclk);
+  this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h263E56C5, Helper::EQUL);
   // 32Bits
   repeat (100) @(posedge this.apb4.pclk);
   this.write(`CRC_CTRL_ADDR, 32'b11_11_1_1_1 & {`CRC_CTRL_WIDTH{1'b1}});
@@ -915,7 +915,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h4 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h1C, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h1C, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'b0 & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'h55 & {`CRC_XORV_WIDTH{1'b1}});
@@ -924,7 +924,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD9, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD9, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hFF & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -933,7 +933,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h4 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hC8, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hC8, Helper::EQUL);
 
   // $display("=== [test crc16 0x1021 val] ===");
   // this.write(`CRC_INIT_ADDR, 32'h1D0F & {`CRC_INIT_WIDTH{1'b1}});
@@ -943,7 +943,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h9706, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h9706, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hFFFF & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -952,7 +952,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h0EC9, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h0EC9, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hFFFF & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'hFFFF & {`CRC_XORV_WIDTH{1'b1}});
@@ -961,7 +961,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hF136, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hF136, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'b0 & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -970,7 +970,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD186, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hD186, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hFFFF & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -979,7 +979,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h213E, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h213E, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hB2AA & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -988,7 +988,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h22B0, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h22B0, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'h89EC & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -997,7 +997,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h943F, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h943F, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hFFFF & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'hFFFF & {`CRC_XORV_WIDTH{1'b1}});
@@ -1006,7 +1006,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hDEC1, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hDEC1, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'b0 & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -1015,7 +1015,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h13C6, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h13C6, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hC6C6 & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -1024,7 +1024,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hCF26, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hCF26, Helper::EQUL);
 
   // $display("=== [test crc16 0x8005 val] ===");
   // for (int i = 0; i < 256; i++) begin
@@ -1075,7 +1075,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hEC9F, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hEC9F, Helper::EQUL);
 
 
   // this.write(`CRC_INIT_ADDR, 32'b0 & {`CRC_INIT_WIDTH{1'b1}});
@@ -1085,7 +1085,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h88F2, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h88F2, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hFFFF & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'b0 & {`CRC_XORV_WIDTH{1'b1}});
@@ -1094,7 +1094,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h1234 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hC70C, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'hC70C, Helper::EQUL);
 
   // this.write(`CRC_INIT_ADDR, 32'hFFFF & {`CRC_INIT_WIDTH{1'b1}});
   // this.write(`CRC_XORV_ADDR, 32'hFFFF & {`CRC_XORV_WIDTH{1'b1}});
@@ -1103,7 +1103,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'hE3A4 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h6841, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h6841, Helper::EQUL);
 
   // $display("=== [test crc32 val] ===");
   // this.write(`CRC_INIT_ADDR, 32'hFFFF_FFFF & {`CRC_INIT_WIDTH{1'b1}});
@@ -1113,7 +1113,7 @@ task automatic CRCTest::test_crc();
   // repeat (200) @(posedge this.apb4.pclk);
   // this.write(`CRC_DATA_ADDR, 32'h12345678 & {`CRC_DATA_WIDTH{1'b1}});
   // repeat (200) @(posedge this.apb4.pclk);
-  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h4A090E98, Helper::EQUL, Helper::INFO);
+  // this.rd_check(`CRC_DATA_ADDR, "DATA REG", 32'h4A090E98, Helper::EQUL);
 
   // for (int i = 0; i < 256; i++) begin
   //   this.write(`CRC_INIT_ADDR, 32'b0 & {`CRC_INIT_WIDTH{1'b1}});
