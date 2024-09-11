@@ -15,6 +15,8 @@
 * Static synchronous design
 * Full synthesizable
 
+FULL vision of datatsheet can be found in [datasheet.md](./doc/datasheet.md).
+
 ## Build and Test
 ```bash
 make comp    # compile code with vcs
